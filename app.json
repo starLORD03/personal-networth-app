@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Personal Net Worth",
+    "slug": "personal-networth-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jinesh.networth"
+    },
+    "android": {
+      "package": "com.jinesh.networth",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "94d7e6cd-b122-4623-b5d4-f524b4c38e6a"
+      }
+    }
+  }
+}
