@@ -1,38 +1,75 @@
-import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
 
-const investmentsData = [
-  { id: 1, name: 'SBI Bluechip Fund', type: 'Mutual Fund', currentValue: 6802.6, investedAmount: 6000, returns: 802.6, riskLevel: 'Medium' },
-  { id: 2, name: 'Reliance Industries', type: 'Stock', currentValue: 61270, investedAmount: 58000, returns: 3270, riskLevel: 'High' },
-  { id: 3, name: 'HDFC Top 100 Fund', type: 'Mutual Fund', currentValue: 104446, investedAmount: 100000, returns: 4446, riskLevel: 'Medium' },
-  { id: 4, name: 'PPF Account', type: 'Tax Saving', currentValue: 125000, investedAmount: 100000, returns: 25000, riskLevel: 'Low' },
-];
+
+import React, { useContext } from 'react';
+import { ScrollView, View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { AppContext } from '../context/AppContext';
 
 export default function InvestmentsScreen() {
-  const totalInvestmentValue = investmentsData.reduce((sum,i)=>sum+i.currentValue,0);
-  const totalReturns = investmentsData.reduce((sum,i)=>sum+i.returns,0);
+  const { investments } = useContext(AppContext);
+  const totalInvestmentValue = investments.reduce((sum,i)=>sum+i.currentValue,0);
+  const totalReturns = investments.reduce((sum,i)=>sum+i.returns,0);
 
   return (
-    <ScrollView style={{ flex: 1, padding: 10, backgroundColor:'#f0f0f0' }}>
-      <Text style={{ fontWeight:'600', fontSize:16, marginBottom:10 }}>Total Investment Value</Text>
-      <View style={{ backgroundColor:'#6b5bff', padding:10, borderRadius:10, marginBottom:10 }}>
-        <Text style={{ fontSize:16, color:'#fff', fontWeight:'600' }}>₹{totalInvestmentValue.toLocaleString()}</Text>
-        <Text style={{ fontSize:12, color:'#d1d5db' }}>+₹{totalReturns.toLocaleString()} Returns</Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Investments</Text>
+      <View style={styles.summaryCard}>
+        <Text style={styles.summaryLabel}>Total Investment Value</Text>
+        <Text style={styles.summaryAmount}>₹{totalInvestmentValue.toLocaleString()}</Text>
+        <View style={styles.summaryReturnsRow}>
+          <Ionicons name="trending-up-outline" size={20} color="#fff" />
+          <Text style={styles.summaryReturnsText}>+₹{totalReturns.toLocaleString()} Returns</Text>
+        </View>
       </View>
 
-      {investmentsData.map(inv=>(
-        <View key={inv.id} style={{ backgroundColor:'#fff', padding:10, borderRadius:10, marginBottom:5 }}>
-          <View style={{ flexDirection:'row', justifyContent:'space-between' }}>
-            <Text style={{ fontWeight:'600' }}>{inv.name}</Text>
-            <Text style={{ fontSize:12, color: inv.riskLevel==='High' ? 'red': inv.riskLevel==='Medium'?'orange':'green' }}>{inv.riskLevel} Risk</Text>
+      <Text style={styles.sectionTitle}>Holdings</Text>
+      {investments.map(inv => (
+        <View key={inv.id} style={styles.holdingCard}>
+          <View style={styles.holdingHeader}>
+            <View>
+              <Text style={styles.holdingName}>{inv.name}</Text>
+              <Text style={styles.holdingType}>{inv.type}</Text>
+            </View>
+            <View style={[styles.holdingRisk, {backgroundColor: inv.riskLevel === 'High' ? '#FECACA' : inv.riskLevel === 'Medium' ? '#FEF9C3' : '#DCFCE7'}]}>
+              <Text style={{color: inv.riskLevel === 'High' ? '#DC2626' : inv.riskLevel === 'Medium' ? '#CA8A04' : '#16A34A', fontSize: 12, fontWeight: 'bold'}}>{inv.riskLevel} Risk</Text>
+            </View>
           </View>
-          <Text style={{ fontSize:14, fontWeight:'600', color:'#000' }}>₹{inv.currentValue.toLocaleString()}</Text>
-          <Text style={{ fontSize:12, color: inv.returns>=0?'green':'red' }}>
-            {inv.returns>=0 ? '+' : ''}₹{inv.returns.toLocaleString()} ({((inv.returns/inv.investedAmount)*100).toFixed(2)}%)
-          </Text>
-          <Text style={{ fontSize:12, color:'#555' }}>{inv.type}</Text>
+          <View style={styles.holdingFooter}>
+            <View>
+              <Text style={styles.holdingValue}>₹{inv.currentValue.toLocaleString()}</Text>
+              {inv.units && (
+                <Text style={styles.holdingUnits}>{inv.units} units @ ₹{inv.nav || inv.price}</Text>
+              )}
+            </View>
+            <View style={styles.holdingReturnsCol}>
+              <Text style={[styles.holdingReturns, {color: inv.returns >= 0 ? '#16A34A' : '#DC2626'}]}>{inv.returns >= 0 ? '+' : '-'}₹{inv.returns.toLocaleString()}</Text>
+              <Text style={styles.holdingReturnsPercent}>{((inv.returns/inv.investedAmount)*100).toFixed(2)}%</Text>
+            </View>
+          </View>
         </View>
       ))}
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F9FAFB', padding: 0 },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#111827', margin: 18, marginBottom: 0 },
+  summaryCard: { backgroundColor: '#8B5CF6', borderRadius: 16, marginHorizontal: 18, marginBottom: 18, padding: 18, alignItems: 'center' },
+  summaryLabel: { color: '#fff', fontSize: 15, opacity: 0.9, marginBottom: 4 },
+  summaryAmount: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
+  summaryReturnsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  summaryReturnsText: { color: '#fff', fontSize: 13, marginLeft: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#111827', marginHorizontal: 18, marginBottom: 8 },
+  holdingCard: { backgroundColor: '#fff', borderRadius: 16, marginHorizontal: 18, marginBottom: 12, padding: 18, borderWidth: 1, borderColor: '#E5E7EB' },
+  holdingHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  holdingName: { color: '#111827', fontWeight: 'bold', fontSize: 15 },
+  holdingType: { color: '#6B7280', fontSize: 12 },
+  holdingRisk: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  holdingFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  holdingValue: { color: '#111827', fontWeight: 'bold', fontSize: 18 },
+  holdingUnits: { color: '#6B7280', fontSize: 12 },
+  holdingReturnsCol: { alignItems: 'flex-end' },
+  holdingReturns: { fontWeight: 'bold', fontSize: 15 },
+  holdingReturnsPercent: { color: '#6B7280', fontSize: 12, marginTop: 2 },
+});

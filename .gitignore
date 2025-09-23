@@ -15,6 +15,7 @@ yarn-error.log*
 .expo-shared/
 *.expo.js
 *.expo.json
+.expo/*.*
 
 # Build outputs
 android/
