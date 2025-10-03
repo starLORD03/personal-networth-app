@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { AppContext } from '../context/AppContext';
 import { useNavigation } from '@react-navigation/native';
+import AuthService from '../services/AuthService';
 
 export default function EditProfileScreen() {
   const navigation = useNavigation();
@@ -22,26 +23,22 @@ export default function EditProfileScreen() {
   });
 
   const [loading, setLoading] = useState(false);
-
   const handleSave = async () => {
     try {
       setLoading(true);
-      
-      // Validate required fields
+
       if (!formData.name.trim()) {
         Alert.alert('Error', 'Name is required');
         setLoading(false);
         return;
       }
 
-      // Update user in context (you can add API call here)
-      const updatedUser = {
-        ...user,
-        ...formData,
-      };
-      
+      // Update profile in AuthService (persists data)
+      const updatedUser = await AuthService.updateUserProfile(formData);
+
+      // Update context
       setUser(updatedUser);
-      
+
       Alert.alert('Success', 'Profile updated successfully', [
         {
           text: 'OK',
@@ -55,6 +52,38 @@ export default function EditProfileScreen() {
       setLoading(false);
     }
   };
+  // const handleSave = async () => {
+  //   try {
+  //     setLoading(true);
+      
+  //     // Validate required fields
+  //     if (!formData.name.trim()) {
+  //       Alert.alert('Error', 'Name is required');
+  //       setLoading(false);
+  //       return;
+  //     }
+
+  //     // Update user in context (you can add API call here)
+  //     const updatedUser = {
+  //       ...user,
+  //       ...formData,
+  //     };
+      
+  //     setUser(updatedUser);
+      
+  //     Alert.alert('Success', 'Profile updated successfully', [
+  //       {
+  //         text: 'OK',
+  //         onPress: () => navigation.goBack(),
+  //       }
+  //     ]);
+  //   } catch (error) {
+  //     console.error('Update profile error:', error);
+  //     Alert.alert('Error', 'Failed to update profile');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <ScrollView style={styles.container}>

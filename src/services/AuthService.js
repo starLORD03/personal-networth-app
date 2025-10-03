@@ -171,20 +171,54 @@ class AuthService {
     }
   }
 
-  // Logout - clears all user data
-  async logout() {
-    try {
+  // Modified logout - keeps profile data
+async logout(clearProfileData = false) {
+  try {
+    await SecureStore.deleteItemAsync(this.STORAGE_KEYS.USER_TOKEN);
+    await AsyncStorage.removeItem(this.STORAGE_KEYS.BIOMETRIC_ENABLED);
+    await AsyncStorage.removeItem(this.STORAGE_KEYS.FIRST_LOGIN);
+    await AsyncStorage.removeItem('hasOpenedBefore');
+    
+    // Only clear user data if explicitly requested (account deletion)
+    if (clearProfileData) {
       await SecureStore.deleteItemAsync(this.STORAGE_KEYS.USER_DATA);
-      await SecureStore.deleteItemAsync(this.STORAGE_KEYS.USER_TOKEN);
-      await AsyncStorage.removeItem(this.STORAGE_KEYS.BIOMETRIC_ENABLED);
-      await AsyncStorage.removeItem(this.STORAGE_KEYS.FIRST_LOGIN);
-      await AsyncStorage.removeItem('hasOpenedBefore');
-      return true;
-    } catch (error) {
-      console.error('Logout error:', error);
-      throw error;
     }
+    
+    return true;
+  } catch (error) {
+    console.error('Logout error:', error);
+    throw error;
   }
+}
+async deleteAccount() {
+  try {
+    await SecureStore.deleteItemAsync(this.STORAGE_KEYS.USER_TOKEN);
+    await SecureStore.deleteItemAsync(this.STORAGE_KEYS.USER_DATA);
+    await AsyncStorage.removeItem(this.STORAGE_KEYS.BIOMETRIC_ENABLED);
+    await AsyncStorage.removeItem(this.STORAGE_KEYS.FIRST_LOGIN);
+    await AsyncStorage.removeItem('hasOpenedBefore');
+    await AsyncStorage.removeItem('darkMode');
+    // Clear any other app data here
+    return true;
+  } catch (error) {
+    console.error('Delete account error:', error);
+    throw error;
+  }
+}
+  // // Logout - clears all user data
+  // async logout() {
+  //   try {
+  //     await SecureStore.deleteItemAsync(this.STORAGE_KEYS.USER_DATA);
+  //     await SecureStore.deleteItemAsync(this.STORAGE_KEYS.USER_TOKEN);
+  //     await AsyncStorage.removeItem(this.STORAGE_KEYS.BIOMETRIC_ENABLED);
+  //     await AsyncStorage.removeItem(this.STORAGE_KEYS.FIRST_LOGIN);
+  //     await AsyncStorage.removeItem('hasOpenedBefore');
+  //     return true;
+  //   } catch (error) {
+  //     console.error('Logout error:', error);
+  //     throw error;
+  //   }
+  // }
 
   // Update user data
   async updateUserData(userData) {
@@ -196,6 +230,31 @@ class AuthService {
       return false;
     }
   }
+
+  async updateUserProfile(profileData) {
+  try {
+    // Get existing user data
+    const userData = await this.getSecureData(this.STORAGE_KEYS.USER_DATA);
+    
+    if (!userData) {
+      throw new Error('No user data found');
+    }
+
+    // Merge with new profile data
+    const updatedData = {
+      ...userData,
+      ...profileData,
+      updatedAt: new Date().toISOString()
+    };
+
+    // Store updated data
+    await this.storeSecureData(this.STORAGE_KEYS.USER_DATA, updatedData);
+    return updatedData;
+  } catch (error) {
+    console.error('Update profile failed:', error);
+    throw error;
+  }
+}
 
   // Validate Google user data
   validateGoogleUserData(userData) {

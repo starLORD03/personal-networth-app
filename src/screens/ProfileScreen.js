@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { 
   View, Text, ScrollView, TouchableOpacity, StyleSheet, 
   Switch, Image, Alert 
@@ -6,17 +6,18 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { AppContext } from '../context/AppContext';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
 import AuthService from '../services/AuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const { user, setUser, setIsFirstLogin } = useContext(AppContext);
-  const [darkMode, setDarkMode] = useState(false);
+  const { theme, isDarkMode, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     checkBiometricStatus();
   }, []);
 
@@ -102,6 +103,8 @@ export default function ProfileScreen() {
     }
   };
 
+    const styles = createStyles(theme);
+
   return (
     <ScrollView style={styles.container}>
       {/* Profile Header */}
@@ -132,21 +135,24 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         
-        <MenuItem 
+                <MenuItem 
           icon="person-outline"
           title="Personal Information"
           onPress={handleEditProfile}
+          theme={theme}
         />
         <MenuItem 
           icon="wallet-outline"
           title="Currency Settings"
           subtitle={user?.currency || 'INR'}
           onPress={() => navigation.navigate('CurrencySettings')}
+          theme={theme}
         />
         <MenuItem 
           icon="shield-checkmark-outline"
           title="Security"
           onPress={() => navigation.navigate('Security')}
+          theme={theme}
         />
       </View>
 
@@ -154,19 +160,21 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Preferences</Text>
         
-        <MenuItemWithSwitch 
+                <MenuItemWithSwitch 
           icon="moon-outline"
           title="Dark Mode"
           subtitle="Enable dark theme"
-          value={darkMode}
-          onValueChange={setDarkMode}
+          value={isDarkMode}
+          onValueChange={toggleTheme}
+          theme={theme}
         />
-        <MenuItemWithSwitch 
+                <MenuItemWithSwitch 
           icon="notifications-outline"
           title="Notifications"
           subtitle="Push notifications"
           value={notifications}
           onValueChange={setNotifications}
+          theme={theme}
         />
         <MenuItemWithSwitch 
           icon="finger-print"
@@ -174,6 +182,7 @@ export default function ProfileScreen() {
           subtitle="Use fingerprint or face ID"
           value={biometricEnabled}
           onValueChange={toggleBiometric}
+          theme={theme}
         />
       </View>
 
@@ -181,16 +190,18 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Data & Privacy</Text>
         
-        <MenuItem 
+                <MenuItem 
           icon="download-outline"
           title="Export Data"
           onPress={() => Alert.alert('Export Data', 'Feature coming soon')}
+          theme={theme}
         />
         <MenuItem 
           icon="trash-outline"
           title="Delete Account"
           onPress={() => Alert.alert('Delete Account', 'This feature is not yet available')}
           isDestructive
+          theme={theme}
         />
       </View>
 
@@ -198,20 +209,23 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
         
-        <MenuItem 
+                <MenuItem 
           icon="information-circle-outline"
           title="App Version"
           subtitle="1.0.0"
+          theme={theme}
         />
         <MenuItem 
           icon="document-text-outline"
           title="Terms of Service"
           onPress={() => Alert.alert('Terms', 'Terms of Service')}
+          theme={theme}
         />
         <MenuItem 
           icon="shield-outline"
           title="Privacy Policy"
           onPress={() => Alert.alert('Privacy', 'Privacy Policy')}
+          theme={theme}
         />
       </View>
 
@@ -226,7 +240,9 @@ export default function ProfileScreen() {
   );
 }
 
-function MenuItem({ icon, title, subtitle, onPress, isDestructive = false }) {
+function MenuItem({ icon, title, subtitle, onPress, isDestructive = false, theme }) {
+  const styles = createStyles(theme);
+  
   return (
     <TouchableOpacity 
       style={styles.menuItem} 
@@ -237,7 +253,7 @@ function MenuItem({ icon, title, subtitle, onPress, isDestructive = false }) {
         <Ionicons 
           name={icon} 
           size={22} 
-          color={isDestructive ? '#DC2626' : '#6B7280'} 
+          color={isDestructive ? theme.colors.error : theme.colors.textSecondary} 
         />
         <View style={styles.menuItemText}>
           <Text style={[styles.menuItemTitle, isDestructive && styles.destructiveText]}>
@@ -249,17 +265,19 @@ function MenuItem({ icon, title, subtitle, onPress, isDestructive = false }) {
         </View>
       </View>
       {onPress && (
-        <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+        <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
       )}
     </TouchableOpacity>
   );
 }
 
-function MenuItemWithSwitch({ icon, title, subtitle, value, onValueChange }) {
+function MenuItemWithSwitch({ icon, title, subtitle, value, onValueChange, theme }) {
+  const styles = createStyles(theme);
+  
   return (
     <View style={styles.menuItem}>
       <View style={styles.menuItemLeft}>
-        <Ionicons name={icon} size={22} color="#6B7280" />
+        <Ionicons name={icon} size={22} color={theme.colors.textSecondary} />
         <View style={styles.menuItemText}>
           <Text style={styles.menuItemTitle}>{title}</Text>
           {subtitle && (
@@ -270,25 +288,29 @@ function MenuItemWithSwitch({ icon, title, subtitle, value, onValueChange }) {
       <Switch 
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-        thumbColor={value ? '#3B82F6' : '#F3F4F6'}
+        trackColor={{ 
+          false: theme.colors.border, 
+          true: theme.colors.primaryLight 
+        }}
+        thumbColor={value ? theme.colors.primary : theme.colors.surface}
+        ios_backgroundColor={theme.colors.border}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
+const createStyles = (theme) => StyleSheet.create({
+    container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: theme.colors.background,
   },
   profileHeader: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.card,
     alignItems: 'center',
     paddingVertical: 32,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: theme.colors.border,
   },
   profileImageContainer: {
     marginBottom: 16,
@@ -298,13 +320,13 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 3,
-    borderColor: '#3B82F6',
+        borderColor: theme.colors.primary,
   },
   profileImagePlaceholder: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#3B82F6',
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -313,21 +335,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-  profileName: {
+    profileName: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#111827',
+    color: theme.colors.text,
     marginBottom: 4,
   },
   profileEmail: {
     fontSize: 15,
-    color: '#6B7280',
+    color: theme.colors.textSecondary,
     marginBottom: 20,
   },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#3B82F6',
+    backgroundColor: theme.colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 24,
     borderRadius: 20,
@@ -338,15 +360,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginLeft: 8,
   },
-  section: {
-    backgroundColor: '#fff',
+    section: {
+    backgroundColor: theme.colors.card,
     marginTop: 12,
     paddingVertical: 8,
   },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6B7280',
+    color: theme.colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     paddingHorizontal: 20,
@@ -359,7 +381,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: theme.colors.borderLight,
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -370,34 +392,34 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     flex: 1,
   },
-  menuItemTitle: {
+    menuItemTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#111827',
+    color: theme.colors.text,
   },
   menuItemSubtitle: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: theme.colors.textTertiary,
     marginTop: 2,
   },
-  destructiveText: {
-    color: '#DC2626',
+    destructiveText: {
+    color: theme.colors.error,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.card,
     marginTop: 12,
     paddingVertical: 16,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#FEE2E2',
+    borderColor: theme.colors.errorContainer,
   },
   logoutText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#DC2626',
+    color: theme.colors.error,
     marginLeft: 8,
   },
   bottomSpacer: {
