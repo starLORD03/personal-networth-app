@@ -2,6 +2,8 @@
   "expo": {
     "name": "Personal Net Worth",
     "slug": "personal-networth-app",
+    "owner": "jineshgada",
+    "scheme": "networth",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,9 +18,26 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "plugins": [
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Use Face ID to authenticate and access your financial data securely."
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jinesh.networth"
+      "bundleIdentifier": "com.jinesh.networth",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID to securely access your financial data",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLName": "networth",
+            "CFBundleURLSchemes": ["networth"]
+          }
+        ]
+      }
     },
     "android": {
       "package": "com.jinesh.networth",
@@ -26,12 +45,36 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "USE_FINGERPRINT",
+        "USE_BIOMETRIC",
+        "INTERNET"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "networth",
+              "host": "auth"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "extra": {
       "eas": {
         "projectId": "94d7e6cd-b122-4623-b5d4-f524b4c38e6a"
-      }
+      },
+      "androidGoogleClientId": "582568586721-ci5kosk3im0u1bpq0719ls6kfo4ukdl7.apps.googleusercontent.com",
+      "webGoogleClientId": "582568586721-h4hdtvnsi8k5hhc7j6ilc81ng2f0iuu3.apps.googleusercontent.com",
+      "expoGoogleClientId": "582568586721-h4hdtvnsi8k5hhc7j6ilc81ng2f0iuu3.apps.googleusercontent.com"
     }
   }
 }

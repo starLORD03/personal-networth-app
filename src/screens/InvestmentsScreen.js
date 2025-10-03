@@ -6,9 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppContext } from '../context/AppContext';
 
 export default function InvestmentsScreen() {
-  const { investments } = useContext(AppContext);
-  const totalInvestmentValue = investments.reduce((sum,i)=>sum+i.currentValue,0);
-  const totalReturns = investments.reduce((sum,i)=>sum+i.returns,0);
+  const { investments = [] } = useContext(AppContext);
+  const safeInvestments = Array.isArray(investments) ? investments : [];
+  
+  const totalInvestmentValue = safeInvestments.reduce((sum,i)=>sum+i.currentValue,0);
+  const totalReturns = safeInvestments.reduce((sum,i)=>sum+i.returns,0);
 
   return (
     <ScrollView style={styles.container}>
@@ -22,8 +24,14 @@ export default function InvestmentsScreen() {
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Holdings</Text>
-      {investments.map(inv => (
+            <Text style={styles.sectionTitle}>Holdings</Text>
+      {safeInvestments.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="trending-up-outline" size={48} color="#9CA3AF" />
+          <Text style={styles.emptyStateText}>No investments yet</Text>
+          <Text style={styles.emptyStateSubtext}>Start investing to grow your wealth</Text>
+        </View>
+      ) : safeInvestments.map(inv => (
         <View key={inv.id} style={styles.holdingCard}>
           <View style={styles.holdingHeader}>
             <View>
@@ -70,6 +78,27 @@ const styles = StyleSheet.create({
   holdingValue: { color: '#111827', fontWeight: 'bold', fontSize: 18 },
   holdingUnits: { color: '#6B7280', fontSize: 12 },
   holdingReturnsCol: { alignItems: 'flex-end' },
-  holdingReturns: { fontWeight: 'bold', fontSize: 15 },
+    holdingReturns: { fontWeight: 'bold', fontSize: 15 },
   holdingReturnsPercent: { color: '#6B7280', fontSize: 12, marginTop: 2 },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+    backgroundColor: '#fff',
+    marginHorizontal: 18,
+    marginBottom: 12,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 12,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    marginTop: 4,
+  },
 });

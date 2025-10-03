@@ -1,55 +1,153 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useReducer, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import AuthService from '../services/AuthService';
 
 export const AppContext = createContext();
 
+const initialState = {
+  user: null,
+  accounts: [],
+  transactions: [],
+  investments: [],
+  goals: [],
+  assets: [],
+  loading: false,
+  error: null,
+  isFirstLogin: false,
+  showBalances: true,
+  appInitialized: false,
+};
+
+const appReducer = (state, action) => {
+  switch (action.type) {
+    case 'SET_USER':
+      return { ...state, user: action.payload };
+    case 'SET_FIRST_LOGIN':
+      return { ...state, isFirstLogin: action.payload };
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
+    case 'SET_ACCOUNTS':
+      return { ...state, accounts: action.payload };
+    case 'SET_TRANSACTIONS':
+      return { ...state, transactions: action.payload };
+    case 'SET_INVESTMENTS':
+      return { ...state, investments: action.payload };
+    case 'SET_GOALS':
+      return { ...state, goals: action.payload };
+    case 'TOGGLE_BALANCE_VISIBILITY':
+      return { ...state, showBalances: !state.showBalances };
+    case 'ADD_TRANSACTION':
+      return { 
+        ...state, 
+        transactions: [action.payload, ...state.transactions] 
+      };
+    case 'ADD_ACCOUNT':
+      return {
+        ...state,
+        accounts: [...state.accounts, action.payload]
+      };
+    case 'ADD_INVESTMENT':
+      return {
+        ...state,
+        investments: [...state.investments, action.payload]
+      };
+    case 'ADD_GOAL':
+      return {
+        ...state,
+        goals: [...state.goals, action.payload]
+      };
+    case 'LOGOUT':
+      return {
+        ...initialState,
+        appInitialized: true,
+      };
+    case 'SET_APP_INITIALIZED':
+      return { ...state, appInitialized: true };
+    default:
+      return state;
+  }
+};
+
 export const AppProvider = ({ children }) => {
-  // Centralized state for accounts, assets, transactions, investments, goals
-  const [user, setUser] = useState({
-    name: 'John Doe',
-    profilePic: null,
-    currency: 'INR'
-  });
-  const [accounts, setAccounts] = useState([
-    { id: 1, name: 'HDFC Savings', type: 'bank', balance: 125000, accountNumber: '****1234' },
-    { id: 2, name: 'SBI Current', type: 'bank', balance: 45000, accountNumber: '****5678' },
-    { id: 3, name: 'ICICI Credit Card', type: 'credit', balance: -15000, limit: 100000 },
-    { id: 4, name: 'Personal Loan', type: 'loan', balance: -350000, originalAmount: 500000 }
-  ]);
-  const [assets, setAssets] = useState([
-    { id: 1, name: 'Apartment', type: 'real-estate', value: 4500000, purchasePrice: 4000000 },
-    { id: 2, name: 'Car', type: 'vehicle', value: 800000, purchasePrice: 1200000 },
-    { id: 3, name: 'Gold', type: 'commodity', value: 150000, quantity: '30g' },
-    { id: 4, name: 'Emergency FD', type: 'fixed-deposit', value: 200000, maturityDate: '2026-08-28' }
-  ]);
-  const [transactions, setTransactions] = useState([
-    { id: 1, date: '2025-08-28', description: 'Swiggy Food Order', amount: -450, category: 'Food & Dining', type: 'expense', merchant: 'Swiggy', account: 'HDFC Savings' },
-    { id: 2, date: '2025-08-27', description: 'Salary Credit', amount: 85000, category: 'Income', type: 'income', merchant: 'Tech Corp Ltd', account: 'HDFC Savings' },
-    { id: 3, date: '2025-08-26', description: 'Netflix Subscription', amount: -199, category: 'Entertainment', type: 'expense', merchant: 'Netflix', account: 'ICICI Credit Card' },
-    { id: 4, date: '2025-08-25', description: 'Zepto Groceries', amount: -850, category: 'Groceries', type: 'expense', merchant: 'Zepto', account: 'HDFC Savings' },
-    { id: 5, date: '2025-08-24', description: 'Jio Recharge', amount: -599, category: 'Phone/Internet', type: 'expense', merchant: 'Jio', account: 'HDFC Savings' }
-  ]);
-  const [investments, setInvestments] = useState([
-    { id: 1, name: 'SBI Bluechip Fund', type: 'Mutual Fund', units: 150.5, nav: 45.20, currentValue: 6802.60, investedAmount: 6000, returns: 802.60, riskLevel: 'Medium' },
-    { id: 2, name: 'Reliance Industries', type: 'Stock', units: 25, price: 2450.80, currentValue: 61270, investedAmount: 58000, returns: 3270, riskLevel: 'High' },
-    { id: 3, name: 'HDFC Top 100 Fund', type: 'Mutual Fund', units: 200.8, nav: 520.15, currentValue: 104446.12, investedAmount: 100000, returns: 4446.12, riskLevel: 'Medium' },
-    { id: 4, name: 'PPF Account', type: 'Tax Saving', currentValue: 125000, investedAmount: 100000, returns: 25000, riskLevel: 'Low' }
-  ]);
-  const [goals, setGoals] = useState([
-    { id: 1, name: 'Emergency Fund', targetAmount: 500000, currentAmount: 200000, targetDate: '2026-12-31', priority: 'High' },
-    { id: 2, name: 'Car Purchase', targetAmount: 1200000, currentAmount: 300000, targetDate: '2026-06-30', priority: 'Medium' },
-    { id: 3, name: 'Vacation Fund', targetAmount: 200000, currentAmount: 50000, targetDate: '2025-12-31', priority: 'Low' },
-    { id: 4, name: 'House Down Payment', targetAmount: 1000000, currentAmount: 150000, targetDate: '2027-03-31', priority: 'High' }
-  ]);
+  const [state, dispatch] = useReducer(appReducer, initialState);
+
+  useEffect(() => {
+    initializeApp();
+  }, []);
+
+    const initializeApp = async () => {
+    try {
+      // Just mark app as initialized
+      // Don't check hasOpenedBefore here - let login flow handle it
+      dispatch({ type: 'SET_APP_INITIALIZED' });
+    } catch (error) {
+      console.error('App initialization failed:', error);
+      dispatch({ type: 'SET_ERROR', payload: error.message });
+    }
+  };
+
+    const setUser = (userData) => {
+    dispatch({ type: 'SET_USER', payload: userData });
+  };
+
+  const setIsFirstLogin = (value) => {
+    dispatch({ type: 'SET_FIRST_LOGIN', payload: value });
+  };
+
+  const logout = async () => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      
+      // Clear secure storage
+      await AuthService.clearUserSession();
+      
+      // Clear app state
+      dispatch({ type: 'LOGOUT' });
+    } catch (error) {
+      console.error('Logout failed:', error);
+      dispatch({ type: 'SET_ERROR', payload: 'Logout failed' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  const addTransaction = (transaction) => {
+    dispatch({ type: 'ADD_TRANSACTION', payload: transaction });
+  };
+
+  const addAccount = (account) => {
+    dispatch({ type: 'ADD_ACCOUNT', payload: account });
+  };
+
+  const addInvestment = (investment) => {
+    dispatch({ type: 'ADD_INVESTMENT', payload: investment });
+  };
+
+  const addGoal = (goal) => {
+    dispatch({ type: 'ADD_GOAL', payload: goal });
+  };
+
+  const toggleBalanceVisibility = () => {
+    dispatch({ type: 'TOGGLE_BALANCE_VISIBILITY' });
+  };
+
+    const value = {
+    ...state,
+    setUser,
+    setIsFirstLogin,
+    logout,
+    addTransaction,
+    addAccount,
+    addInvestment,
+    addGoal,
+    toggleBalanceVisibility,
+    dispatch,
+  };
 
   return (
-    <AppContext.Provider value={{
-      user, setUser,
-      accounts, setAccounts,
-      assets, setAssets,
-      transactions, setTransactions,
-      investments, setInvestments,
-      goals, setGoals
-    }}>
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );

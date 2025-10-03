@@ -6,9 +6,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppContext } from '../context/AppContext';
 
 export default function AccountsScreen() {
-  const { accounts, assets } = useContext(AppContext);
-  const totalAssets = accounts.filter(a => a.balance > 0).reduce((sum,a)=>sum+a.balance,0) + assets.reduce((sum,a)=>sum+a.value,0);
-  const totalLiabilities = Math.abs(accounts.filter(a=>a.balance<0).reduce((sum,a)=>sum+a.balance,0));
+  const { accounts = [], assets = [] } = useContext(AppContext);
+  
+  const safeAccounts = Array.isArray(accounts) ? accounts : [];
+  const safeAssets = Array.isArray(assets) ? assets : [];
+  
+  const totalAssets = safeAccounts.filter(a => a.balance > 0).reduce((sum,a)=>sum+a.balance,0) + 
+                      safeAssets.reduce((sum,a)=>sum+a.value,0);
+  const totalLiabilities = Math.abs(safeAccounts.filter(a=>a.balance<0).reduce((sum,a)=>sum+a.balance,0));
+
+  const hasAccounts = safeAccounts.length > 0;
+  const hasAssets = safeAssets.length > 0;
 
   return (
     <ScrollView style={styles.container}>
@@ -24,8 +32,15 @@ export default function AccountsScreen() {
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Bank Accounts</Text>
-      {accounts.filter(acc => acc.type === 'bank').map(acc => (
+                  <Text style={styles.sectionTitle}>Bank Accounts</Text>
+      {!hasAccounts && (
+        <View style={styles.emptyState}>
+          <Ionicons name="wallet-outline" size={48} color="#9CA3AF" />
+          <Text style={styles.emptyStateText}>No accounts added yet</Text>
+          <Text style={styles.emptyStateSubtext}>Add your first account to start tracking</Text>
+        </View>
+      )}
+      {safeAccounts.filter(acc => acc.type === 'bank').map(acc => (
         <View key={acc.id} style={styles.bankCard}>
           <View style={styles.bankCardHeader}>
             <View>
@@ -41,8 +56,8 @@ export default function AccountsScreen() {
         </View>
       ))}
 
-      <Text style={styles.sectionTitle}>Credit & Loans</Text>
-      {accounts.filter(acc => acc.type === 'credit' || acc.type === 'loan').map(acc => (
+                  <Text style={styles.sectionTitle}>Credit & Loans</Text>
+      {safeAccounts.filter(acc => acc.type === 'credit' || acc.type === 'loan').map(acc => (
         <View key={acc.id} style={styles.creditCard}>
           <View style={styles.creditCardHeader}>
             <View>
@@ -66,8 +81,8 @@ export default function AccountsScreen() {
         </View>
       ))}
 
-      <Text style={styles.sectionTitle}>Assets</Text>
-      {assets.map(asset => (
+                  <Text style={styles.sectionTitle}>Assets</Text>
+      {safeAssets.map(asset => (
         <View key={asset.id} style={styles.assetCard}>
           <View style={styles.assetCardHeader}>
             <View>
@@ -122,6 +137,27 @@ const styles = StyleSheet.create({
   assetName: { color: '#111827', fontWeight: 'bold', fontSize: 15 },
   assetType: { color: '#6B7280', fontSize: 12, textTransform: 'capitalize' },
   assetValue: { color: '#3B82F6', fontWeight: 'bold', fontSize: 18, marginTop: 4 },
-  assetCardIconCol: { alignItems: 'flex-end' },
-  assetChange: { fontSize: 12, marginTop: 2 },
+    assetCardIconCol: { alignItems: 'flex-end' },
+    assetChange: { fontSize: 12, marginTop: 2 },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+    backgroundColor: '#fff',
+    marginHorizontal: 18,
+    marginBottom: 12,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 12,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    marginTop: 4,
+  },
 });

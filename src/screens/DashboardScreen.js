@@ -1,6 +1,4 @@
-
-
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppContext } from '../context/AppContext';
@@ -8,12 +6,55 @@ import { useNavigation } from '@react-navigation/native';
 
 export default function DashboardScreen() {
   const navigation = useNavigation();
-  const { user, transactions } = useContext(AppContext);
+  const { user = {}, transactions = [] } = useContext(AppContext);
+  const [greeting, setGreeting] = useState('');
+  const [greetingIcon, setGreetingIcon] = useState('sunny');
+
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
+
+  useEffect(() => {
+    updateGreeting();
+    // Update greeting every minute
+    const interval = setInterval(updateGreeting, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const updateGreeting = () => {
+    const hour = new Date().getHours();
+    
+    if (hour >= 5 && hour < 12) {
+      setGreeting('Good Morning');
+      setGreetingIcon('sunny');
+    } else if (hour >= 12 && hour < 17) {
+      setGreeting('Good Afternoon');
+      setGreetingIcon('partly-sunny');
+    } else if (hour >= 17 && hour < 22) {
+      setGreeting('Good Evening');
+      setGreetingIcon('moon');
+    } else {
+      setGreeting('Good Evening');
+      setGreetingIcon('moon');
+    }
+  };
+
+  const capitalizeFirstLetter = (name) => {
+    if (!name) return '';
+    return name
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  const getFirstName = (name) => {
+    if (!name) return 'User';
+    const firstName = name.split(' ')[0];
+    return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+  };
 
   // Calculate monthly income/expenses
-  const monthlyIncome = transactions.filter(t => t.type === 'income' && new Date(t.date).getMonth() === new Date().getMonth())
+  const monthlyIncome = safeTransactions.filter(t => t.type === 'income' && new Date(t.date).getMonth() === new Date().getMonth())
     .reduce((sum, t) => sum + t.amount, 0);
-  const monthlyExpenses = transactions.filter(t => t.type === 'expense' && new Date(t.date).getMonth() === new Date().getMonth())
+  const monthlyExpenses = safeTransactions.filter(t => t.type === 'expense' && new Date(t.date).getMonth() === new Date().getMonth())
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
   // Calculate net worth (simple sum for demo)
@@ -24,15 +65,36 @@ export default function DashboardScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <View style={styles.avatar}><Text style={styles.avatarText}>{user.name.charAt(0)}</Text></View>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Profile')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </Text>
+            </View>
+          </TouchableOpacity>
           <View>
-            <Text style={styles.greeting}>Good morning,</Text>
-            <Text style={styles.userName}>{user.name.split(' ')[0]}</Text>
+            <View style={styles.greetingRow}>
+              <Ionicons
+                name={greetingIcon}
+                size={16}
+                color="#F59E0B"
+                style={styles.greetingIcon}
+              />
+              <Text style={styles.greeting}>{greeting},</Text>
+            </View>
+            <Text style={styles.userName}>
+              {user?.name ? getFirstName(user.name) : 'User'}
+            </Text>
           </View>
         </View>
         <View style={styles.headerRight}>
-          <Ionicons name="eye-off-outline" size={22} color="#6B7280" style={{marginRight:12}} />
-          <Ionicons name="notifications-outline" size={22} color="#6B7280" />
+          <Ionicons name="eye-off-outline" size={22} color="#6B7280" style={{ marginRight: 12 }} />
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <Ionicons name="settings-outline" size={22} color="#6B7280" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -70,7 +132,7 @@ export default function DashboardScreen() {
         <View style={styles.summaryDivider} />
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Net Savings</Text>
-          <Text style={styles.summaryAmount}>{(monthlyIncome - monthlyExpenses).toLocaleString()}</Text>
+          <Text style={styles.summaryAmount}>₹{(monthlyIncome - monthlyExpenses).toLocaleString()}</Text>
         </View>
       </View>
 
@@ -80,7 +142,11 @@ export default function DashboardScreen() {
           <Text style={styles.transactionsTitle}>Recent Transactions</Text>
           <Ionicons name="chevron-forward-outline" size={20} color="#6B7280" />
         </View>
-        {transactions.slice(0, 2).map(transaction => (
+        {safeTransactions.length === 0 ? (
+          <View style={styles.emptyTransactions}>
+            <Text style={styles.emptyText}>No transactions yet</Text>
+          </View>
+        ) : safeTransactions.slice(0, 2).map(transaction => (
           <View key={transaction.id} style={styles.transactionRow}>
             <View style={[styles.transactionIconCircle, {backgroundColor: transaction.type === 'income' ? '#F0FDF4' : '#FEF2F2'}]}>
               <Ionicons name={transaction.type === 'income' ? 'arrow-up' : 'arrow-down'} size={18} color={transaction.type === 'income' ? '#16A34A' : '#DC2626'} />
@@ -102,7 +168,7 @@ export default function DashboardScreen() {
 
 function QuickAction({ label, color, icon }) {
   return (
-    <TouchableOpacity style={[styles.quickAction, {backgroundColor: color}]}> 
+    <TouchableOpacity style={[styles.quickAction, {backgroundColor: color}]}>
       <Ionicons name={icon} size={24} color="#fff" />
       <Text style={styles.quickActionLabel}>{label}</Text>
     </TouchableOpacity>
@@ -115,8 +181,15 @@ const styles = StyleSheet.create({
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'linear-gradient(90deg,#3B82F6,#8B5CF6)', alignItems: 'center', justifyContent: 'center', marginRight: 12, backgroundColor: '#3B82F6' },
   avatarText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  greeting: { color: '#6B7280', fontSize: 13 },
-  userName: { color: '#111827', fontWeight: 'bold', fontSize: 16 },
+  greetingRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center',
+  },
+  greetingIcon: {
+    marginRight: 4,
+  },
+  greeting: { color: '#6B7280', fontSize: 14, fontWeight: '400' },
+  userName: { color: '#111827', fontWeight: '700', fontSize: 18, letterSpacing: 0.3, marginTop: 2 },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   netWorthCard: { backgroundColor: 'linear-gradient(90deg,#22C55E,#3B82F6)', borderRadius: 16, margin: 18, padding: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: '#3B82F6' },
   netWorthLabel: { color: '#fff', fontSize: 16, opacity: 0.9, marginBottom: 4 },
@@ -149,4 +222,12 @@ const styles = StyleSheet.create({
   transactionAmountCol: { alignItems: 'flex-end' },
   transactionAmount: { fontWeight: 'bold', fontSize: 15 },
   transactionDate: { color: '#6B7280', fontSize: 12, marginTop: 2 },
+  emptyTransactions: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+  },
 });
